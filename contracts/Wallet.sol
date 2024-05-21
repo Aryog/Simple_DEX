@@ -77,18 +77,30 @@ contract Wallet {
         address tokenAddress;
     }
     bytes32[] public tokenList;
+    address public owner;
     mapping(bytes32 => Token) public tokenMapping;
 
     mapping(address => mapping(bytes32 => uint256)) public balances;
     modifier tokenExist(bytes32 ticker) {
-        require(
-            tokenMapping[ticker].tokenAddress != address(0),
-            "Token does not exist"
-        );
+        require(doesTokenExist(ticker), "Token does not exist");
         _;
     }
 
-    function addToken(bytes32 ticker, address tokenAddress) external {
+    modifier onlyOwner() {
+        require(owner == msg.sender, "Ownable: caller is not the owner");
+        _;
+    }
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    function doesTokenExist(bytes32 ticker) internal view returns (bool) {
+        return (tokenMapping[ticker].tokenAddress != address(0));
+    }
+
+    function addToken(bytes32 ticker, address tokenAddress) external onlyOwner {
+        require(!doesTokenExist(ticker), "Token already exists");
         tokenMapping[ticker] = Token(ticker, tokenAddress);
         tokenList.push(ticker);
     }
@@ -113,5 +125,9 @@ contract Wallet {
         );
         IERC20(tokenMapping[ticker].tokenAddress).transfer(msg.sender, amount);
         balances[msg.sender][ticker] = balances[msg.sender][ticker].sub(amount);
+    }
+
+    function getOwner() external view returns (address) {
+        return owner;
     }
 }
