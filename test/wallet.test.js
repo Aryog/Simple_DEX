@@ -15,7 +15,7 @@ describe("Wallet", function () {
         // await wallet.deployed();
 
         // Deploy the MyToken contract and mint tokens to the owner
-        myToken = await MyToken.deploy(1000000);
+        myToken = await MyToken.deploy("MyToken", "MTK", 1000000);
         // await myToken.deployed();
 
         // Add MyToken to the wallet

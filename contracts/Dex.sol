@@ -21,7 +21,8 @@ contract Dex is Wallet {
     }
 
     uint public nextOrderId;
-    mapping(bytes32 => mapping(uint => Order[])) public orderBook;
+    mapping(bytes32 => Order[]) public topBuyOrders;
+    mapping(bytes32 => Order[]) public topSellOrders;
 
     event NewOrder(
         uint id,
@@ -38,7 +39,10 @@ contract Dex is Wallet {
         bytes32 baseTicker,
         OrderType orderType
     ) external view returns (Order[] memory) {
-        return orderBook[baseTicker][uint(orderType)];
+        return
+            orderType == OrderType.BUY
+                ? topBuyOrders[baseTicker]
+                : topSellOrders[baseTicker];
     }
 
     function createLimitOrder(
@@ -47,7 +51,7 @@ contract Dex is Wallet {
         bytes32 quoteTicker,
         uint amount,
         uint price
-    ) external tokenExist(baseTicker) tokenExist(quoteTicker) {
+    ) public tokenExist(baseTicker) tokenExist(quoteTicker) {
         if (orderType == OrderType.SELL) {
             require(
                 balances[msg.sender][baseTicker] >= amount,
@@ -60,7 +64,9 @@ contract Dex is Wallet {
             );
         }
 
-        Order[] storage orders = orderBook[baseTicker][uint(orderType)];
+        Order[] storage orders = orderType == OrderType.BUY
+            ? topBuyOrders[baseTicker]
+            : topSellOrders[baseTicker];
         orders.push(
             Order(
                 nextOrderId,
@@ -94,7 +100,7 @@ contract Dex is Wallet {
         bytes32 baseTicker,
         bytes32 quoteTicker,
         uint amount
-    ) external tokenExist(baseTicker) tokenExist(quoteTicker) {
+    ) public tokenExist(baseTicker) tokenExist(quoteTicker) {
         if (orderType == OrderType.SELL) {
             require(
                 balances[msg.sender][baseTicker] >= amount,
@@ -102,9 +108,9 @@ contract Dex is Wallet {
             );
         }
 
-        Order[] storage orders = orderBook[baseTicker][
-            uint(orderType == OrderType.BUY ? OrderType.SELL : OrderType.BUY)
-        ];
+        Order[] storage orders = orderType == OrderType.BUY
+            ? topSellOrders[baseTicker]
+            : topBuyOrders[baseTicker];
         uint remaining = amount;
 
         for (uint i = 0; i < orders.length && remaining > 0; i++) {
