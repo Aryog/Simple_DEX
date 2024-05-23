@@ -45,6 +45,7 @@ contract Dex is Wallet {
                 : topSellOrders[baseTicker];
     }
 
+    // For creating the order book for buy and sell
     function createLimitOrder(
         OrderType orderType,
         bytes32 baseTicker,
@@ -95,6 +96,7 @@ contract Dex is Wallet {
         sortOrders(orderType, orders);
     }
 
+    // For instant selling or buying with best available market price. Done without specifying amount
     function createMarketOrder(
         OrderType orderType,
         bytes32 baseTicker,
@@ -187,13 +189,17 @@ contract Dex is Wallet {
         tokenExist(toTicker)
         tokenExist(intermediateTicker)
     {
+        // Sell fromTicker for intermediateTicker
         createMarketOrder(
             OrderType.SELL,
             fromTicker,
             intermediateTicker,
             amount
         );
+
+        // Buy toTicker using intermediateTicker
         uint intermediateAmount = balances[msg.sender][intermediateTicker];
+        require(intermediateAmount > 0, "No intermediate tokens received");
         createMarketOrder(
             OrderType.BUY,
             toTicker,
